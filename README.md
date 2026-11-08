@@ -1,6 +1,6 @@
 # 互動式影像處理與人臉分析
 
-以 Python 3.11、Streamlit、FastAPI、NumPy、OpenCV 與 Pillow 建立的影像處理專題。支援影像中繼資料、RGB/YUV 分量與直方圖、自訂二維卷積核、PSNR，以及 MediaPipe BlazeFace 人臉框與逐臉信心度。
+以 Python 3.11、Streamlit、FastAPI、NumPy、OpenCV 與 Pillow 建立的影像處理專題。支援影像中繼資料、RGB/YUV 分量與直方圖、自訂二維卷積核、PSNR，以及 YuNet 人臉框與逐臉信心度。
 
 ## 啟動
 
@@ -9,7 +9,7 @@ uv sync
 uv run streamlit run app/streamlit_app.py
 ```
 
-預設影像為 Audrey Hepburn JPG；下拉選單可切換同圖 PNG/BMP、Star Trek 多人臉測試圖，或上傳其他影像。預設素材與 BlazeFace 模型放在 `assets/`，會隨 repository 部署；本機原始測試資料夾不參與執行。
+預設影像為 Audrey Hepburn JPG；下拉選單可切換同圖 PNG/BMP、Star Trek 多人臉測試圖，或上傳其他影像。預設素材與 YuNet 模型放在 `assets/`，會隨 repository 部署；本機原始測試資料夾不參與執行。
 
 FastAPI 可另開終端啟動：
 
@@ -21,7 +21,7 @@ uv run uvicorn app.api:app --reload
 
 ```text
 影像來源 → Streamlit 介面 ─┐
-                           ├→ app/imaging.py → Pillow / NumPy / OpenCV / MediaPipe
+                           ├→ app/imaging.py → Pillow / NumPy / OpenCV
 HTTP 請求 → FastAPI ───────┘
 ```
 
@@ -59,7 +59,7 @@ PSNR 越高代表像素差異通常越小；它不完全等同主觀視覺品質
 
 ### 人臉偵測
 
-使用 MediaPipe Face Detector 的 BlazeFace 輕量模型，回傳每張臉的邊界框與模型分數；介面可調最低偵測門檻，預設 0.50。畫框標籤和結果表顯示逐臉信心度。此分數是模型輸出，不代表校準後的真實正確機率。模型檔為 `assets/models/blaze_face_short_range.tflite`，使用官方 [BlazeFace 短距離模型](https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite)；模型與用途說明見[官方模型卡](https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20%28Short%20Range%29.pdf)。短距離模型適合較近的人臉。
+使用 OpenCV Zoo 的 YuNet 輕量 CNN 人臉偵測器，回傳每張臉的邊界框與模型分數；本專題固定以 0.50 分數門檻篩選，使用者按下偵測即可得到總數、逐臉框和信心度。此分數是模型輸出，不代表校準後的真實正確機率。模型檔為 `assets/models/face_detection_yunet_2026may.onnx`，其動態輸入尺寸支援不同解析度；YuNet 可偵測約 10×10 至 300×300 像素範圍內的人臉。[OpenCV Zoo 模型說明與 MIT 授權](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)。
 
 ## FastAPI 路由
 
@@ -71,7 +71,7 @@ PSNR 越高代表像素差異通常越小；它不完全等同主觀視覺品質
 ## 專案資料
 
 - `assets/samples/`：四張 Demo 預設圖（Audrey JPG/PNG/BMP、Star Trek 多人臉）
-- `assets/models/`：MediaPipe BlazeFace 模型
+- `assets/models/`：OpenCV Zoo YuNet ONNX 模型
 - `app/`：介面、API 與影像核心
 - `scripts/convert_image.py`：將 JPEG 轉成 PNG/BMP，並逐像素檢查輸出
 - `pyproject.toml`、`uv.lock`：Python 相依套件與鎖定版本

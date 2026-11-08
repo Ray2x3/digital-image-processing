@@ -18,6 +18,7 @@ __pycache__/
 test_img/
 uploads/
 *.pdf
+/assets/models/blaze_face_short_range.tflite
 
 # Windows/macOS file manager metadata
 Thumbs.db

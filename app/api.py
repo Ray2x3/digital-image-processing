@@ -1,5 +1,5 @@
 """FastAPI service exposing image metadata, filtering and face detection."""
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 from .imaging import apply_kernel, decode_image, detect_faces, psnr
 
@@ -31,11 +31,10 @@ async def image_filter(kernel: FilterRequest, file: UploadFile = File(...)):
         raise HTTPException(400, str(exc)) from exc
 
 @app.post("/image/faces")
-async def image_faces(file: UploadFile = File(...), min_confidence: float = Form(0.5)):
+async def image_faces(file: UploadFile = File(...)):
     try:
         rgb, _ = decode_image(await file.read())
-        _, faces = detect_faces(rgb, min_confidence)
-        return {"model": "MediaPipe BlazeFace Short Range", "min_confidence": min_confidence,
-                "count": len(faces), "faces": faces}
+        _, faces = detect_faces(rgb)
+        return {"model": "OpenCV Zoo YuNet", "count": len(faces), "faces": faces}
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(400, str(exc)) from exc
