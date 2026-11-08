@@ -51,6 +51,16 @@ git push -u origin main
 
 `MSE = (1/N) Σ(I − K)²`；`PSNR = 10 log10(MAX²/MSE)`，本專題 `MAX=255`。原圖與結果完全相同時 `MSE=0`，PSNR 為無限大。
 
+## JPEG 轉 PNG/BMP
+
+使用 Pillow 的驗證式轉檔工具：
+
+```powershell
+uv run python scripts/convert_image.py "test_img/audrey hepburn.JPG"
+```
+
+預設將 PNG 和 BMP 輸出至來源資料夾。程式不覆寫既有檔案，並在留下輸出前重新解碼、逐像素比對 RGB；若格式不符、讀取失敗或像素不一致，會停止並清除暫存/部分輸出。JPEG 原有的有損壓縮無法由轉檔還原，但轉出的 PNG/BMP 像素應與「解碼後的 JPG」完全相同。
+
 ## 已知限制與後續項目
 
 Haar Cascade 能回傳人臉框與數量，但模型本身不提供可信的 confidence score；如評分必須有信心度，需改用輸出 confidence 的模型。報告檔名需為 `學號_姓名_期中專題.pdf`，並補入本人操作截圖、邊界測試、AI prompt 歷程、GitHub 與公開展示網址。

@@ -33,8 +33,12 @@ def view_channels(rgb: np.ndarray, mode: str) -> tuple[np.ndarray, list[tuple[st
     if mode == "Original":
         return rgb, [(name, rgb[:, :, i]) for i, name in enumerate(("R", "G", "B"))]
     if mode in {"R", "G", "B"}:
-        plane = rgb[:, :, {"R": 0, "G": 1, "B": 2}[mode]]
-        return plane, [(mode, plane)]
+        idx = {"R": 0, "G": 1, "B": 2}[mode]
+        plane = rgb[:, :, idx]
+        # Keep only the selected component while preserving RGB display color.
+        isolated = np.zeros_like(rgb)
+        isolated[:, :, idx] = plane
+        return isolated, [(mode, plane)]
     yuv = cv2.cvtColor(rgb, cv2.COLOR_RGB2YUV)
     idx = {"Y": 0, "U": 1, "V": 2}.get(mode)
     if idx is None:

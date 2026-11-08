@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 import numpy as np
 import streamlit as st
 
@@ -12,6 +13,29 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from app.imaging import apply_kernel, decode_image, detect_faces, psnr, view_channels
+
+
+def configure_chart_font() -> bool:
+    """Load a local CJK font when available; return whether Chinese labels are safe."""
+    candidates = [
+        Path(r"C:\Windows\Fonts\msyh.ttc"),
+        Path(r"C:\Windows\Fonts\simhei.ttf"),
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
+        Path("/System/Library/Fonts/PingFang.ttc"),
+    ]
+    for font_path in candidates:
+        if font_path.is_file():
+            font_manager.fontManager.addfont(str(font_path))
+            family = font_manager.FontProperties(fname=str(font_path)).get_name()
+            plt.rcParams["font.family"] = family
+            plt.rcParams["axes.unicode_minus"] = False
+            return True
+    plt.rcParams["axes.unicode_minus"] = False
+    return False
+
+
+HAS_CJK_FONT = configure_chart_font()
 
 st.set_page_config(page_title="互動式影像處理與人臉分析", page_icon="🖼️", layout="wide")
 st.title("互動式影像處理與人臉分析工具")
@@ -37,7 +61,11 @@ with tab_color:
     fig, ax = plt.subplots(figsize=(8, 4))
     for name, plane in channels:
         ax.hist(plane.ravel(), bins=256, range=(0, 256), alpha=0.55, label=name)
-    ax.set(xlim=(0, 255), xlabel="像素強度（0–255）", ylabel="像素數量", title=f"{mode} 直方圖")
+    if HAS_CJK_FONT:
+        xlabel, ylabel, title = "像素強度（0–255）", "像素數量", f"{mode} 直方圖"
+    else:
+        xlabel, ylabel, title = "Pixel intensity (0–255)", "Pixel count", f"{mode} Histogram"
+    ax.set(xlim=(0, 255), xlabel=xlabel, ylabel=ylabel, title=title)
     ax.legend(); ax.grid(alpha=0.2)
     right.pyplot(fig, clear_figure=True)
 
