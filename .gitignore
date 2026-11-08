@@ -1,0 +1,24 @@
+# Local Python environment and uv download cache
+.venv/
+.uv-cache/
+
+# Python bytecode and test/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Credentials and machine-specific secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Local or private image inputs and generated submission artifacts
+test_img/
+uploads/
+*.pdf
+
+# Windows/macOS file manager metadata
+Thumbs.db
+.DS_Store

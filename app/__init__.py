@@ -1,0 +1,1 @@
+"""Image Lab application package."""
