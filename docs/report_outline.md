@@ -29,15 +29,15 @@
 | 影像載入 | PNG、JPG、BMP；錯誤檔案 | [填寫] | [截圖] |
 | RGB/YUV 與直方圖 | 彩色測試影像 | [填寫] | [截圖] |
 | 卷積與 PSNR | Identity、高斯、銳化、零總和正規化 | [填寫] | [截圖] |
-| 人臉偵測 | 單人、多人、無人臉影像 | [填寫] | [截圖] |
+| 人臉偵測 | Audrey 單人、Star Trek 多人、無人臉影像 | 框、數量與逐臉信心度 [填寫實測] | [截圖] |
 
 ### PSNR
 
 對 N 個像素樣本，`MSE = (1/N) Σ(Iᵢ − Kᵢ)²`。8-bit 影像峰值 `MAX=255`，故 `PSNR = 10 log₁₀(MAX²/MSE) dB`。若 `MSE=0`，PSNR 為 `∞ dB`。PSNR 衡量像素差異，不能單獨代表主觀視覺品質。
 
-### 模型限制
+### 人臉偵測模型與限制
 
-Haar Cascade 可輸出邊界框，但不提供 confidence score；畫面與 API 明確回報此項不可用。若驗收要求每張臉信心度，必須換用能輸出 confidence 的偵測器並重新實測。
+本專題使用 MediaPipe Face Detector 的 BlazeFace short-range 模型，輸出邊界框及逐臉模型信心度；預設最低門檻為 0.50。信心度是模型分數，不等於校準後的真實正確機率。請以 Audrey 單人、Star Trek 多人及無人臉影像實測，填寫實際偵測數與分數。
 
 ## Chapter 4：AI 協作與 Prompt 歷程
 

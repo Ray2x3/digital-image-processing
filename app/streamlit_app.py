@@ -39,13 +39,35 @@ HAS_CJK_FONT = configure_chart_font()
 
 st.set_page_config(page_title="互動式影像處理與人臉分析", page_icon="🖼️", layout="wide")
 st.title("互動式影像處理與人臉分析工具")
-st.caption("影像載入・RGB/YUV 色彩分析・自訂卷積核・PSNR・Haar 人臉偵測")
-uploaded = st.file_uploader("上傳 PNG、JPG/JPEG 或 BMP 影像", type=["png", "jpg", "jpeg", "bmp"])
-if uploaded is None:
-    st.info("請先上傳一張影像以開始操作。")
-    st.stop()
+st.caption("影像載入・RGB/YUV 色彩分析・自訂卷積核・PSNR・MediaPipe 人臉偵測")
+sample_dir = Path(PROJECT_ROOT) / "assets" / "samples"
+sample_images = {
+    "Audrey Hepburn — JPG（預設）": sample_dir / "audrey_hepburn.jpg",
+    "Audrey Hepburn — PNG": sample_dir / "audrey_hepburn.png",
+    "Audrey Hepburn — BMP": sample_dir / "audrey_hepburn.bmp",
+    "Star Trek — 多人臉測試": sample_dir / "star_trek.jpg",
+}
+source_choice = st.selectbox(
+    "選擇影像來源",
+    [*sample_images, "上傳其他測試圖片"],
+    help="預設使用 Audrey JPG；也可切換相同影像的 PNG/BMP，或上傳自己的測試圖。",
+)
+
+if source_choice == "上傳其他測試圖片":
+    uploaded = st.file_uploader("上傳 PNG、JPG/JPEG 或 BMP 影像", type=["png", "jpg", "jpeg", "bmp"])
+    if uploaded is None:
+        st.info("請選擇一張測試影像。")
+        st.stop()
+    image_bytes = uploaded.getvalue()
+else:
+    selected_path = sample_images[source_choice]
+    if not selected_path.is_file():
+        st.error(f"找不到預設測試影像：{selected_path}。請確認 test_img 資料夾存在，或改選上傳圖片。")
+        st.stop()
+    image_bytes = selected_path.read_bytes()
+
 try:
-    rgb, info = decode_image(uploaded.getvalue())
+    rgb, info = decode_image(image_bytes)
 except ValueError as exc:
     st.error(str(exc))
     st.stop()
@@ -88,12 +110,16 @@ with tab_filter:
             st.error(str(exc))
 
 with tab_face:
+    min_confidence = st.slider("最低偵測信心度", 0.0, 1.0, 0.5, 0.05, help="低於門檻的偵測結果不會顯示。")
     if st.button("偵測人臉", type="primary"):
         try:
-            marked, faces = detect_faces(rgb)
+            marked, faces = detect_faces(rgb, min_confidence)
             st.image(marked, caption=f"偵測到 {len(faces)} 張人臉", use_container_width=True)
             st.write(f"人臉數量：{len(faces)}")
-            st.caption("OpenCV Haar Cascade 不提供信心度分數，因此不呈現不實數值。")
-            if faces: st.json(faces)
-        except RuntimeError as exc:
+            st.caption("標籤分數為 MediaPipe 模型的偵測信心度，不代表校準後的正確機率。")
+            if faces:
+                st.dataframe([{"人臉": i + 1, "信心度": f"{face['confidence']:.1%}",
+                               "邊界框 (x, y, w, h)": f"({face['x']}, {face['y']}, {face['width']}, {face['height']})"}
+                              for i, face in enumerate(faces)], hide_index=True, use_container_width=True)
+        except (RuntimeError, ValueError) as exc:
             st.error(str(exc))

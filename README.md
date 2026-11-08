@@ -1,66 +1,78 @@
-# 互動式影像處理與人臉分析工具
+# 互動式影像處理與人臉分析
 
-以 Python、Streamlit 和 FastAPI 製作的影像處理期中專題。支援 PNG/JPG/JPEG/BMP、RGB/YUV 通道與直方圖、自訂空間卷積核、PSNR，以及 OpenCV Haar Cascade 人臉偵測。
+以 Python 3.11、Streamlit、FastAPI、NumPy、OpenCV 與 Pillow 建立的影像處理專題。支援影像中繼資料、RGB/YUV 分量與直方圖、自訂二維卷積核、PSNR，以及 MediaPipe BlazeFace 人臉框與逐臉信心度。
 
-## 專案規劃與架構
-
-```text
-使用者影像 → Streamlit 互動介面（上傳、顯示、參數、圖表）
-                 ↓ 共用影像核心
-       app/imaging.py ←→ FastAPI（/health、/image/info、/image/filter、/image/faces）
-       Pillow：解碼與中繼資訊；NumPy/OpenCV：色彩、卷積、人臉；Matplotlib：直方圖
-```
-
-先完成本機影像處理，再補上操作截圖與測試紀錄，接著推送 GitHub、部署公開展示，最後整理完整 PDF 報告與 AI 協作歷程。報告需填入真實公開網址及本人實測結果。
-
-## 環境建置
-
-使用 Python 3.11 或更新版本。已安裝 uv 時：
+## 啟動
 
 ```powershell
 uv sync
 uv run streamlit run app/streamlit_app.py
+```
+
+預設影像為 Audrey Hepburn JPG；下拉選單可切換同圖 PNG/BMP、Star Trek 多人臉測試圖，或上傳其他影像。預設素材與 BlazeFace 模型放在 `assets/`，會隨 repository 部署；本機原始測試資料夾不參與執行。
+
+FastAPI 可另開終端啟動：
+
+```powershell
 uv run uvicorn app.api:app --reload
 ```
 
-若尚未安裝 uv，可先用 Python venv：
+## 架構
 
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-uv sync
-uv run streamlit run app/streamlit_app.py
+```text
+影像來源 → Streamlit 介面 ─┐
+                           ├→ app/imaging.py → Pillow / NumPy / OpenCV / MediaPipe
+HTTP 請求 → FastAPI ───────┘
 ```
 
-## Git 與 GitHub 入門
+`app/streamlit_app.py` 負責介面、圖表和互動；`app/api.py` 提供 HTTP 入口；`app/imaging.py` 集中實作讀檔、色彩轉換、卷積、品質指標和人臉偵測，供兩種介面共用。
 
-Git 是電腦上的版本記錄；GitHub 是分享程式碼的遠端網站。先在 GitHub 建立空白 **Public** repository，再在本資料夾執行：
+## 影像處理原理
 
-```powershell
-git init
-git add .
-git commit -m "建立影像處理專題初始版本"
-git branch -M main
-git remote add origin https://github.com/你的帳號/你的repository.git
-git push -u origin main
-```
+### 色彩分量與直方圖
 
-每完成一小段功能，使用 `git status` 查看改動、`git add .` 加入版本、`git commit -m "描述這次完成的事"` 留存，再用 `git push` 上傳。將範例網址換成自己的 GitHub repository；不要把密碼或 token 放進程式碼。
+解碼後將影像表示成 `H × W × 3` 的 8-bit RGB 陣列。R/G/B 檢視保留選定分量並把另兩個分量設為 0；因此 R 呈紅色、G 呈綠色、B 呈藍色。各通道直方圖統計像素強度 `k∈[0,255]` 的次數：
 
-## PSNR
+`h(k) = #{p | I(p) = k}`
 
-`MSE = (1/N) Σ(I − K)²`；`PSNR = 10 log10(MAX²/MSE)`，本專題 `MAX=255`。原圖與結果完全相同時 `MSE=0`，PSNR 為無限大。
+YUV 將亮度與色度分開。OpenCV 的 RGB→YUV 轉換可概略表示為 `Y≈0.299R+0.587G+0.114B`，U/V 是相對於亮度的色差分量（顯示值以 128 為中心）。各分量以灰階強度圖與對應直方圖呈現。
 
-## JPEG 轉 PNG/BMP
+### 空間卷積與邊界
 
-使用 Pillow 的驗證式轉檔工具：
+對每個像素取周圍鄰域，依核權重加權求和：
 
-```powershell
-uv run python scripts/convert_image.py "test_img/audrey hepburn.JPG"
-```
+`O(x,y) = ΣᵢΣⱼ K(i,j) I(x−i,y−j)`
 
-預設將 PNG 和 BMP 輸出至來源資料夾。程式不覆寫既有檔案，並在留下輸出前重新解碼、逐像素比對 RGB；若格式不符、讀取失敗或像素不一致，會停止並清除暫存/部分輸出。JPEG 原有的有損壓縮無法由轉檔還原，但轉出的 PNG/BMP 像素應與「解碼後的 JPG」完全相同。
+核需為奇數邊長方陣，最大 15×15。程式以複製邊界像素處理影像外側，結果裁切至 0–255。高斯核常以權重總和正規化（例如 3×3 核總和為 16，除以 16 後可大致保留亮度）；銳化和浮雕核則保留其差分/增強權重，不應任意正規化。OpenCV `filter2D` 計算相關運算，因此程式翻轉核後實作數學卷積。
 
-## 已知限制與後續項目
+### PSNR
 
-Haar Cascade 能回傳人臉框與數量，但模型本身不提供可信的 confidence score；如評分必須有信心度，需改用輸出 confidence 的模型。報告檔名需為 `學號_姓名_期中專題.pdf`，並補入本人操作截圖、邊界測試、AI prompt 歷程、GitHub 與公開展示網址。
+以原圖 `I` 與濾波結果 `K` 的所有 RGB 樣本計算均方誤差：
+
+`MSE = (1/N) Σ(Iᵢ−Kᵢ)²`
+
+對 8-bit 影像，`MAX=255`，故：
+
+`PSNR = 10 log₁₀(MAX²/MSE) dB`
+
+PSNR 越高代表像素差異通常越小；它不完全等同主觀視覺品質。完全相同時 MSE 為 0，PSNR 為 `∞ dB`。
+
+### 人臉偵測
+
+使用 MediaPipe Face Detector 的 BlazeFace 輕量模型，回傳每張臉的邊界框與模型分數；介面可調最低偵測門檻，預設 0.50。畫框標籤和結果表顯示逐臉信心度。此分數是模型輸出，不代表校準後的真實正確機率。模型檔為 `assets/models/blaze_face_short_range.tflite`，使用官方 [BlazeFace 短距離模型](https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite)；模型與用途說明見[官方模型卡](https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20%28Short%20Range%29.pdf)。短距離模型適合較近的人臉。
+
+## FastAPI 路由
+
+- `GET /health`：服務狀態
+- `POST /image/info`：影像中繼資料
+- `POST /image/filter`：卷積與 PSNR
+- `POST /image/faces`：偵測人臉、框座標與逐臉信心度
+
+## 專案資料
+
+- `assets/samples/`：四張 Demo 預設圖（Audrey JPG/PNG/BMP、Star Trek 多人臉）
+- `assets/models/`：MediaPipe BlazeFace 模型
+- `app/`：介面、API 與影像核心
+- `scripts/convert_image.py`：將 JPEG 轉成 PNG/BMP，並逐像素檢查輸出
+- `pyproject.toml`、`uv.lock`：Python 相依套件與鎖定版本
+- `docs/report_outline.md`：報告章節與實測紀錄大綱
