@@ -64,7 +64,7 @@ numpy==2.4.6 ; python_full_version < '3.12'
     #   contourpy
     #   digital-image-processing-mid-term-project
     #   matplotlib
-    #   opencv-contrib-python
+    #   opencv-python-headless
     #   pandas
     #   pydeck
     #   streamlit
@@ -73,11 +73,11 @@ numpy==2.5.4 ; python_full_version >= '3.12'
     #   contourpy
     #   digital-image-processing-mid-term-project
     #   matplotlib
-    #   opencv-contrib-python
+    #   opencv-python-headless
     #   pandas
     #   pydeck
     #   streamlit
-opencv-contrib-python==5.0.0.93
+opencv-python-headless==5.0.0.93
     # via digital-image-processing-mid-term-project
 opentelemetry-api==1.45.2
     # via fastapi
