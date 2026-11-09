@@ -46,11 +46,12 @@ sample_images = {
     "Audrey Hepburn — PNG": sample_dir / "audrey_hepburn.png",
     "Audrey Hepburn — BMP": sample_dir / "audrey_hepburn.bmp",
     "Star Trek — 多人臉測試": sample_dir / "star_trek.jpg",
+    "Alien — 無人臉邊界測試": sample_dir / "alien.jpg",
 }
 source_choice = st.selectbox(
     "選擇影像來源",
     [*sample_images, "上傳其他測試圖片"],
-    help="預設使用 Audrey JPG；也可切換相同影像的 PNG/BMP，或上傳自己的測試圖。",
+    help="可直接選擇 Audrey 的 JPG/PNG/BMP、Star Trek 多人臉圖或 Alien 無人臉邊界測試圖，也可上傳其他測試圖。",
 )
 
 if source_choice == "上傳其他測試圖片":
@@ -81,8 +82,10 @@ with tab_color:
     left, right = st.columns(2)
     left.image(shown, caption=f"{mode} 顯示", use_container_width=True, clamp=True)
     fig, ax = plt.subplots(figsize=(8, 4))
+    channel_colors = {"R": "red", "G": "green", "B": "blue", "Y": "gray", "U": "blue", "V": "red"}
     for name, plane in channels:
-        ax.hist(plane.ravel(), bins=256, range=(0, 256), alpha=0.55, label=name)
+        ax.hist(plane.ravel(), bins=256, range=(0, 256), alpha=0.55,
+                color=channel_colors[name], label=name)
     if HAS_CJK_FONT:
         xlabel, ylabel, title = "像素強度（0–255）", "像素數量", f"{mode} 直方圖"
     else:

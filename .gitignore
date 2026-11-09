@@ -17,6 +17,8 @@ __pycache__/
 # Local or private image inputs and generated submission artifacts
 test_img/
 uploads/
+screen_shot/
+output/
 *.pdf
 /assets/models/blaze_face_short_range.tflite
 

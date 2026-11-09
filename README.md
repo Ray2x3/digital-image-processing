@@ -9,7 +9,11 @@ uv sync
 uv run streamlit run app/streamlit_app.py
 ```
 
-預設影像為 Audrey Hepburn JPG；下拉選單可切換同圖 PNG/BMP、Star Trek 多人臉測試圖，或上傳其他影像。預設素材與 YuNet 模型放在 `assets/`，會隨 repository 部署；本機原始測試資料夾不參與執行。
+預設影像為 Audrey Hepburn JPG；下拉選單可切換同圖 PNG/BMP、Star Trek 多人臉測試圖、Alien 無人臉測試圖，或上傳其他影像。預設素材與 YuNet 模型放在 `assets/`，會隨 repository 部署；本機原始測試資料夾不參與執行。
+
+## 部署
+
+可使用 Streamlit Community Cloud，選擇此 GitHub repository、`main` 分支及 `app/streamlit_app.py` 作為入口。部署 Python 請選 3.11，與本機開發環境一致。專案以 `uv.lock` 鎖定依賴，`assets/samples/` 與 `assets/models/` 內的預設影像和 YuNet 模型必須一併提交。
 
 FastAPI 可另開終端啟動：
 
@@ -70,7 +74,7 @@ PSNR 越高代表像素差異通常越小；它不完全等同主觀視覺品質
 
 ## 專案資料
 
-- `assets/samples/`：四張 Demo 預設圖（Audrey JPG/PNG/BMP、Star Trek 多人臉）
+- `assets/samples/`：五張 Demo 預設圖（Audrey JPG/PNG/BMP、Star Trek 多人臉、Alien 無人臉）
 - `assets/models/`：OpenCV Zoo YuNet ONNX 模型
 - `app/`：介面、API 與影像核心
 - `scripts/convert_image.py`：將 JPEG 轉成 PNG/BMP，並逐像素檢查輸出
